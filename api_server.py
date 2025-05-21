@@ -27,8 +27,8 @@ from scripts.utils import (
     extract_text_from_excel,
 )
 
-app = Flask(__name__, static_folder="public")
-CORS(app)  # Enable CORS for all routes
+app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "https://armin-bc.github.io"}})
 
 
 # Serve static files from your frontend
