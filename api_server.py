@@ -1,3 +1,5 @@
+# Version 1.1
+
 import logging
 
 logging.basicConfig(
