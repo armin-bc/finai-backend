@@ -28,7 +28,7 @@ from scripts.utils import (
 )
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "https://armin-bc.github.io"}})
+CORS(app, origins=["https://armin-bc.github.io"], supports_credentials=True)
 
 
 # Serve static files from your frontend
