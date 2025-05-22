@@ -71,14 +71,15 @@ def cors_test():
     return _corsify_actual_response(response)
 
 
-# Serve static files from your frontend
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def serve(path):
-    if path != "" and os.path.exists(app.static_folder + "/" + path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, "index.html")
+@app.route("/")
+def api_root():
+    return jsonify(
+        {
+            "message": "FinAI Backend API",
+            "status": "running",
+            "endpoints": ["/api/cors-test", "/api/upload", "/api/analyze"],
+        }
+    )
 
 
 @app.route("/api/analyze", methods=["POST", "OPTIONS"])
