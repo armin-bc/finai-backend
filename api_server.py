@@ -57,7 +57,7 @@ def api_root():
     )
 
 
-@app.route("/api/analyze", methods=["POST", "OPTIONS"])
+@app.route("/api/analyze", methods=["POST"])
 def analyze():
     """Main endpoint to process data from the frontend tool and return analysis"""
     try:
