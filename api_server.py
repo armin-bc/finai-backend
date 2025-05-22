@@ -1,11 +1,9 @@
-# Version 1.1
-
 import logging
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
 import subprocess
 import json
@@ -30,7 +28,47 @@ from scripts.utils import (
 )
 
 app = Flask(__name__)
-CORS(app, origins=["https://armin-bc.github.io"], supports_credentials=True)
+
+# Enhanced CORS configuration
+CORS(
+    app,
+    origins=["https://armin-bc.github.io"],
+    supports_credentials=True,
+    methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    expose_headers=["Content-Disposition"],
+    max_age=3600,
+)
+
+# Increase max content length for file uploads
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
+
+
+# Helper functions for manual CORS handling
+def _build_cors_preflight_response():
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
+    response.headers.add(
+        "Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With"
+    )
+    response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
+
+
+def _corsify_actual_response(response):
+    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
+
+
+# Add a test endpoint to verify CORS is working
+@app.route("/api/cors-test", methods=["GET", "OPTIONS"])
+def cors_test():
+    if request.method == "OPTIONS":
+        return _build_cors_preflight_response()
+    response = jsonify({"message": "CORS test successful", "status": "ok"})
+    return _corsify_actual_response(response)
 
 
 # Serve static files from your frontend
@@ -43,9 +81,12 @@ def serve(path):
         return send_from_directory(app.static_folder, "index.html")
 
 
-@app.route("/api/analyze", methods=["POST"])
+@app.route("/api/analyze", methods=["POST", "OPTIONS"])
 def analyze():
     """Main endpoint to process data from the frontend tool and return analysis"""
+    if request.method == "OPTIONS":
+        return _build_cors_preflight_response()
+
     try:
         data = request.json
         segment = data.get("segment", "FinSum")  # Default to FinSum if not provided
@@ -352,13 +393,14 @@ def analyze():
             "pmi_chart_selected": include_pmi,  # Flag to indicate PMI was selected
         }
 
-        return jsonify(
+        response = jsonify(
             {
                 "success": True,
                 "message": "Analysis completed successfully",
                 "result": analysis_result,
             }
         )
+        return _corsify_actual_response(response)
 
     except Exception as e:
         import traceback
@@ -367,28 +409,31 @@ def analyze():
         print("❌ Fehler im /api/analyze-Endpunkt:")
         print(error_traceback)
 
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": f"Error processing request: {str(e)}",
-                    "traceback": error_traceback,
-                }
-            ),
-            500,
+        response = jsonify(
+            {
+                "success": False,
+                "message": f"Error processing request: {str(e)}",
+                "traceback": error_traceback,
+            }
         )
+        return _corsify_actual_response(response), 500
 
 
-@app.route("/api/upload", methods=["POST"])
+@app.route("/api/upload", methods=["POST", "OPTIONS"])
 def upload_file():
     """Endpoint to handle file uploads"""
+    if request.method == "OPTIONS":
+        return _build_cors_preflight_response()
+
     try:
         if "file" not in request.files:
-            return jsonify({"success": False, "message": "No file part"}), 400
+            response = jsonify({"success": False, "message": "No file part"})
+            return _corsify_actual_response(response), 400
 
         file = request.files["file"]
         if file.filename == "":
-            return jsonify({"success": False, "message": "No selected file"}), 400
+            response = jsonify({"success": False, "message": "No selected file"})
+            return _corsify_actual_response(response), 400
 
         # Create upload directory if it doesn't exist
         upload_dir = os.path.join(const.PROJECT_ROOT, "uploads")
@@ -398,7 +443,7 @@ def upload_file():
         file_path = os.path.join(upload_dir, file.filename)
         file.save(file_path)
 
-        return jsonify(
+        response = jsonify(
             {
                 "success": True,
                 "message": "File uploaded successfully",
@@ -406,12 +451,13 @@ def upload_file():
                 "path": file_path,
             }
         )
+        return _corsify_actual_response(response)
 
     except Exception as e:
-        return (
-            jsonify({"success": False, "message": f"Error uploading file: {str(e)}"}),
-            500,
+        response = jsonify(
+            {"success": False, "message": f"Error uploading file: {str(e)}"}
         )
+        return _corsify_actual_response(response), 500
 
 
 if __name__ == "__main__":
