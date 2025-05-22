@@ -1,5 +1,3 @@
-#Version 1.01
-
 import logging
 
 logging.basicConfig(
@@ -34,11 +32,19 @@ app = Flask(__name__)
 
 @app.before_request
 def handle_preflight():
-    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    return response
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add(
+            "Access-Control-Allow-Origin", "https://armin-bc.github.io"
+        )
+        response.headers.add(
+            "Access-Control-Allow-Headers", "Content-Type,Authorization"
+        )
+        response.headers.add(
+            "Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS"
+        )
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
 
 
 @app.after_request
@@ -58,7 +64,7 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 @app.route("/api/cors-test", methods=["GET", "OPTIONS"])
 def cors_test():
     response = jsonify({"message": "CORS test successful", "status": "ok"})
-    return response(response)
+    return response
 
 
 @app.route("/")
@@ -388,7 +394,7 @@ def analyze():
                 "result": analysis_result,
             }
         )
-        return response(response)
+        return response
 
     except Exception as e:
         import traceback
@@ -404,7 +410,7 @@ def analyze():
                 "traceback": error_traceback,
             }
         )
-        return response(response), 500
+        return response, 500
 
 
 @app.route("/api/upload", methods=["POST", "OPTIONS"])
@@ -414,12 +420,12 @@ def upload_file():
     try:
         if "file" not in request.files:
             response = jsonify({"success": False, "message": "No file part"})
-            return response(response), 400
+            return response, 400
 
         file = request.files["file"]
         if file.filename == "":
             response = jsonify({"success": False, "message": "No selected file"})
-            return response(response), 400
+            return response, 400
 
         # Create upload directory if it doesn't exist
         upload_dir = os.path.join(const.PROJECT_ROOT, "uploads")
@@ -437,13 +443,13 @@ def upload_file():
                 "path": file_path,
             }
         )
-        return response(response)
+        return response
 
     except Exception as e:
         response = jsonify(
             {"success": False, "message": f"Error uploading file: {str(e)}"}
         )
-        return response(response), 500
+        return response, 500
 
 
 if __name__ == "__main__":
