@@ -1,5 +1,3 @@
-#Version 1.01
-
 import logging
 
 logging.basicConfig(
@@ -31,46 +29,34 @@ from scripts.utils import (
 
 app = Flask(__name__)
 
-# Enhanced CORS configuration
-CORS(
-    app,
-    origins=["https://armin-bc.github.io"],
-    supports_credentials=True,
-    methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-    expose_headers=["Content-Disposition"],
-    max_age=3600,
-)
+
+@app.before_request
+def handle_preflight():
+    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
+
+
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
+
 
 # Increase max content length for file uploads
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 
 
-# Helper functions for manual CORS handling
-def _build_cors_preflight_response():
-    response = make_response()
-    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
-    response.headers.add(
-        "Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With"
-    )
-    response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    return response
-
-
-def _corsify_actual_response(response):
-    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    return response
-
-
 # Add a test endpoint to verify CORS is working
 @app.route("/api/cors-test", methods=["GET", "OPTIONS"])
 def cors_test():
-    if request.method == "OPTIONS":
-        return _build_cors_preflight_response()
     response = jsonify({"message": "CORS test successful", "status": "ok"})
-    return _corsify_actual_response(response)
+    return response(response)
 
 
 @app.route("/")
@@ -87,9 +73,6 @@ def api_root():
 @app.route("/api/analyze", methods=["POST", "OPTIONS"])
 def analyze():
     """Main endpoint to process data from the frontend tool and return analysis"""
-    if request.method == "OPTIONS":
-        return _build_cors_preflight_response()
-
     try:
         data = request.json
         segment = data.get("segment", "FinSum")  # Default to FinSum if not provided
@@ -403,7 +386,7 @@ def analyze():
                 "result": analysis_result,
             }
         )
-        return _corsify_actual_response(response)
+        return response(response)
 
     except Exception as e:
         import traceback
@@ -419,24 +402,22 @@ def analyze():
                 "traceback": error_traceback,
             }
         )
-        return _corsify_actual_response(response), 500
+        return response(response), 500
 
 
 @app.route("/api/upload", methods=["POST", "OPTIONS"])
 def upload_file():
     """Endpoint to handle file uploads"""
-    if request.method == "OPTIONS":
-        return _build_cors_preflight_response()
 
     try:
         if "file" not in request.files:
             response = jsonify({"success": False, "message": "No file part"})
-            return _corsify_actual_response(response), 400
+            return response(response), 400
 
         file = request.files["file"]
         if file.filename == "":
             response = jsonify({"success": False, "message": "No selected file"})
-            return _corsify_actual_response(response), 400
+            return response(response), 400
 
         # Create upload directory if it doesn't exist
         upload_dir = os.path.join(const.PROJECT_ROOT, "uploads")
@@ -454,13 +435,13 @@ def upload_file():
                 "path": file_path,
             }
         )
-        return _corsify_actual_response(response)
+        return response(response)
 
     except Exception as e:
         response = jsonify(
             {"success": False, "message": f"Error uploading file: {str(e)}"}
         )
-        return _corsify_actual_response(response), 500
+        return response(response), 500
 
 
 if __name__ == "__main__":
