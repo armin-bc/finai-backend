@@ -1,5 +1,3 @@
-#Version 1.01
-
 import logging
 
 logging.basicConfig(
@@ -31,32 +29,11 @@ from scripts.utils import (
 
 app = Flask(__name__)
 
-
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        response = make_response()
-        response.headers.add(
-            "Access-Control-Allow-Origin", "https://armin-bc.github.io"
-        )
-        response.headers.add(
-            "Access-Control-Allow-Headers", "Content-Type,Authorization"
-        )
-        response.headers.add(
-            "Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS"
-        )
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        return response
-
-
-@app.after_request
-def after_request(response):
-    response.headers.add("Access-Control-Allow-Origin", "https://armin-bc.github.io")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    return response
-
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "https://armin-bc.github.io"}},
+    supports_credentials=True,
+)
 
 # Increase max content length for file uploads
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
