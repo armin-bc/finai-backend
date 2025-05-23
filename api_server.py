@@ -1,5 +1,3 @@
-#Version 1.01
-
 import logging
 
 logging.basicConfig(
@@ -214,12 +212,12 @@ def analyze():
             "uploaded_documents_text": "\n\n".join(uploaded_texts),
         }
 
-        # Zusätzliche KPIs explizit für den Prompt verfügbar machen
-        context["gross_carrying_amount"] = bank_data_dict.get(
-            "gross_carrying_amount_in_eur_bn", {}
-        )
-        context["allowance_for_credit_losses"] = bank_data_dict.get(
-            "allowance_for_loan_losses_in_eur_bn", {}
+        df_gross_carrying_amount, df_allowance_for_credit_losses = (
+            extract_asset_quality_metrics(
+                os.path.join(const.PROJECT_ROOT, "data", "FDS-Q4-2024-13032025.xlsb")
+            )
+            if segment == "total_bank"
+            else (None, None)
         )
 
         context["uploaded_documents_text"] = "\n\n".join(uploaded_texts)
