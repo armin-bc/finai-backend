@@ -1,5 +1,3 @@
-#Version 1.01
-
 import logging
 
 logging.basicConfig(
@@ -197,12 +195,22 @@ def analyze():
             print(f"Error reading example text: {e}")
             example = ""
 
+        df_gross_carrying_amount, df_allowance_for_credit_losses = (
+            extract_asset_quality_metrics(
+                os.path.join(const.PROJECT_ROOT, "data", "FDS-Q4-2024-13032025.xlsb")
+            )
+            if segment == "total_bank"
+            else (None, None)
+        )
+
         # Prepare context
         context = {
             "segment": segment_name,
             "domain": "Banking",
             "product_type": "Loans",
             "bank_data": bank_data_dict,
+            "gross_carrying_amount": df_gross_carrying_amount,
+            "allowance_for_credit_losses": df_allowance_for_credit_losses,
             "ifo_data": df_ifo.to_string(index=True) if df_ifo is not None else None,
             "pmi_data": (
                 "Please find the PMI data in the PDF report."
@@ -213,14 +221,6 @@ def analyze():
             "example": example,
             "uploaded_documents_text": "\n\n".join(uploaded_texts),
         }
-
-        df_gross_carrying_amount, df_allowance_for_credit_losses = (
-            extract_asset_quality_metrics(
-                os.path.join(const.PROJECT_ROOT, "data", "FDS-Q4-2024-13032025.xlsb")
-            )
-            if segment == "total_bank"
-            else (None, None)
-        )
 
         context["uploaded_documents_text"] = "\n\n".join(uploaded_texts)
 
