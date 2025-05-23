@@ -31,7 +31,9 @@ app = Flask(__name__)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": "https://armin-bc.github.io"}},
+    resources={
+        r"/api/.*": {"origins": "https://armin-bc.github.io"}
+    },  # CORRECTED REGEX
     supports_credentials=True,
 )
 
@@ -40,7 +42,7 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 
 
 # Add a test endpoint to verify CORS is working
-@app.route("/api/cors-test", methods=["GET", "OPTIONS"])
+@app.route("/api/cors-test", methods=["GET"])
 def cors_test():
     response = jsonify({"message": "CORS test successful", "status": "ok"})
     return response
@@ -392,7 +394,7 @@ def analyze():
         return response, 500
 
 
-@app.route("/api/upload", methods=["POST", "OPTIONS"])
+@app.route("/api/upload", methods=["POST"])
 def upload_file():
     """Endpoint to handle file uploads"""
 
