@@ -202,7 +202,7 @@ def analyze():
             extract_asset_quality_metrics(
                 os.path.join(const.PROJECT_ROOT, "data", "FDS-Q4-2024-13032025.xlsb")
             )
-            if segment == "total_bank"
+            if segment == "FinSum"
             else (None, None)
         )
 
