@@ -27,6 +27,7 @@ from scripts.utils import (
     extract_text_from_pdf,
     extract_text_from_docx,
     extract_text_from_excel,
+    extract_asset_quality_metrics
 )
 
 app = Flask(__name__)
